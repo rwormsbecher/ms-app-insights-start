@@ -1,26 +1,41 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import "./App.css";
+import { acquireGraphToken, getGraphToken } from "./adalConfig";
+import Axios from "axios";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    const [userData, setUserData] = useState("");
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            acquireGraphToken();
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // same as  componentDidMount
+    useEffect(() => {
+        async function fetchDataFromGraph() {
+            await acquireGraphToken();
+            let graphToken = await getGraphToken();
+
+            try {
+                let response = await Axios({
+                    url: `https://graph.microsoft.com/v1.0/me/`,
+                    method: "GET",
+                    headers: { Authorization: `Bearer ${graphToken}` }
+                });
+
+                setUserData(response.data);
+            } catch (error) {
+                console.log("error", error);
+            }
+        }
+
+        fetchDataFromGraph();
+    }, []);
+
+    return <div className="App">Welcome, {userData.givenName}</div>;
 }
 
 export default App;
